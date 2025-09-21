@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./stockeasy-backend
+    container_name: stockeasy-backend-compose
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_USER=root
+      - DB_PASSWORD=Root123         # Yahan apna aṣli DB password daalein
+      - DB_NAME=stockeasy_db
+      - EMAIL_USER=your-fsad31499@gmail.com  # Yahan apna email daalein
+      - EMAIL_PASS=spsf xeif jpff lvtj # Yahan apna app password daalein
+  
+  frontend:
+    build: ./stockeasy-frontend
+    container_name: stockeasy-frontend-compose
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
