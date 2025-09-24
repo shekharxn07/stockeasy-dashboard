@@ -4,7 +4,10 @@ pipeline {
     environment {
         // Tomcat ke webapps path
         TOMCAT_PATH = "C:\\Program Files\\Apache Software Foundation\\Tomcat 9.0\\webapps"
-        APP_NAME = "stockeasy-frontend"   // Tomcat me app ka naam
+        FRONTEND_APP = "stockeasy-frontend"     // Tomcat me frontend ka naam
+        FRONTEND_DIR = "frontend"               // Frontend folder repo me
+        BACKEND_DIR = "backend"                 // Backend folder repo me
+        PM2_APP_NAME = "stockeasy-backend"      // PM2 backend app name
     }
 
     stages {
@@ -21,32 +24,49 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Backend Dependencies') {
             steps {
-                bat 'npm install'
+                dir("${BACKEND_DIR}") {
+                    bat 'npm install --production'
+                }
             }
         }
 
-        stage('Build') {
+        stage('Build Frontend') {
             steps {
-                bat 'npm run build'
+                dir("${FRONTEND_DIR}") {
+                    bat 'npm install'
+                    bat 'npm run build'
+                }
             }
         }
 
-        stage('Deploy to Tomcat') {
+        stage('Deploy Frontend to Tomcat') {
             steps {
                 bat """
-                    rmdir /S /Q "%TOMCAT_PATH%\\%APP_NAME%"
-                    mkdir "%TOMCAT_PATH%\\%APP_NAME%"
-                    xcopy build "%TOMCAT_PATH%\\%APP_NAME%" /E /I /Y
+                    rmdir /S /Q "%TOMCAT_PATH%\\%FRONTEND_APP%"
+                    mkdir "%TOMCAT_PATH%\\%FRONTEND_APP%"
+                    xcopy ${FRONTEND_DIR}\\build "%TOMCAT_PATH%\\%FRONTEND_APP%" /E /I /Y
                 """
+            }
+        }
+
+        stage('Deploy Backend with PM2') {
+            steps {
+                dir("${BACKEND_DIR}") {
+                    bat "pm2 stop ${PM2_APP_NAME} || exit 0"
+                    bat "pm2 start server.js --name ${PM2_APP_NAME}"
+                    bat "pm2 save"
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ StockEasy frontend deployed successfully! Visit http://localhost:8080/${APP_NAME}"
+            echo "✅ Frontend + Backend deployed successfully!"
+            echo "Frontend: http://localhost:8080/${FRONTEND_APP}"
+            echo "Backend running via PM2 as ${PM2_APP_NAME}"
         }
         failure {
             echo "❌ Deployment failed. Check console logs."
