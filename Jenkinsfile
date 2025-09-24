@@ -2,63 +2,54 @@ pipeline {
     agent any
 
     environment {
-        NODE_VERSION = "18"               // Node.js version
-        BACKEND_DIR = "backend"           // Backend folder name
-        FRONTEND_DIR = "frontend"         // Frontend folder name
-        PM2_APP_NAME = "stockeasy-backend"
-    }
-
-    tools {
-        nodejs "NodeJS18"                 // Jenkins NodeJS tool name
+        // Tomcat ke webapps path
+        TOMCAT_PATH = "C:\\Program Files\\Apache Software Foundation\\Tomcat 9.0\\webapps"
+        APP_NAME = "stockeasy-frontend"   // Tomcat me app ka naam
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/shekharxn07/stockeasy-dashboard.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/shekharxn07/stockeasy-dashboard.git'
             }
         }
 
-        stage('Install Backend Dependencies') {
+        stage('Check Node & NPM') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'npm install --production'
-                }
+                bat 'node -v'
+                bat 'npm -v'
             }
         }
 
-        stage('Build Frontend') {
+        stage('Install Dependencies') {
             steps {
-                dir("${FRONTEND_DIR}") {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
+                bat 'npm install'
             }
         }
 
-        stage('Deploy Backend with PM2') {
+        stage('Build') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    sh "pm2 stop ${PM2_APP_NAME} || true"
-                    sh "pm2 start server.js --name ${PM2_APP_NAME}"
-                    sh "pm2 save"
-                }
+                bat 'npm run build'
             }
         }
 
-        stage('Frontend Serve via Backend') {
+        stage('Deploy to Tomcat') {
             steps {
-                echo "Frontend will be served by Express backend (no extra step needed)."
+                bat """
+                    rmdir /S /Q "%TOMCAT_PATH%\\%APP_NAME%"
+                    mkdir "%TOMCAT_PATH%\\%APP_NAME%"
+                    xcopy build "%TOMCAT_PATH%\\%APP_NAME%" /E /I /Y
+                """
             }
         }
     }
 
     post {
         success {
-            echo "✅ Deployment successful!"
+            echo "✅ StockEasy frontend deployed successfully! Visit http://localhost:8080/${APP_NAME}"
         }
         failure {
-            echo "❌ Deployment failed!"
+            echo "❌ Deployment failed. Check console logs."
         }
     }
 }
