@@ -1,19 +1,15 @@
 pipeline {
     agent any
-
+    
     environment {
-        // Tomcat ke webapps path
-        TOMCAT_PATH = "C:\\Program Files\\Apache Software Foundation\\Tomcat 9.0\\webapps"
-        FRONTEND_APP = "stockeasy-frontend"     // Tomcat me frontend ka naam
-        FRONTEND_DIR = "frontend"               // Frontend folder repo me
-        BACKEND_DIR = "backend"                 // Backend folder repo me
-        PM2_APP_NAME = "stockeasy-backend"      // PM2 backend app name
+        TOMCAT_HOME = 'C:\\Program Files\\Apache Software Foundation\\Tomcat 9.0'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/shekharxn07/stockeasy-dashboard.git'
+                git branch: 'main',
+                    url: 'https://github.com/shekharxn07/stockeasy-dashboard.git'
             }
         }
 
@@ -26,37 +22,64 @@ pipeline {
 
         stage('Install Backend Dependencies') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    bat 'npm install --production'
+                dir('stockeasy-backend') {
+                    // Add error handling and verbose output
+                    bat '''
+                        echo "Installing backend dependencies..."
+                        if exist "package.json" (
+                            call npm install
+                        ) else (
+                            echo "Error: package.json not found in stockeasy-backend directory"
+                            exit 1
+                        )
+                    '''
                 }
             }
         }
 
         stage('Build Frontend') {
             steps {
-                dir("${FRONTEND_DIR}") {
-                    bat 'npm install'
-                    bat 'npm run build'
+                dir('stockeasy-frontend') {
+                    // Add error handling and verbose output
+                    bat '''
+                        echo "Installing frontend dependencies..."
+                        if exist "package.json" (
+                            call npm install
+                            call npm run build
+                        ) else (
+                            echo "Error: package.json not found in stockeasy-frontend directory"
+                            exit 1
+                        )
+                    '''
                 }
             }
         }
 
         stage('Deploy Frontend to Tomcat') {
             steps {
-                bat """
-                    rmdir /S /Q "%TOMCAT_PATH%\\%FRONTEND_APP%"
-                    mkdir "%TOMCAT_PATH%\\%FRONTEND_APP%"
-                    xcopy ${FRONTEND_DIR}\\build "%TOMCAT_PATH%\\%FRONTEND_APP%" /E /I /Y
-                """
+                script {
+                    def tomcatWebApps = "${env.TOMCAT_HOME}\\webapps"
+                    
+                    // Create deployment directory if it doesn't exist
+                    bat "if not exist \"${tomcatWebApps}\\stockeasy\" mkdir \"${tomcatWebApps}\\stockeasy\""
+                    
+                    // Copy build files to Tomcat
+                    bat "xcopy /s /y \"${WORKSPACE}\\stockeasy-frontend\\build\\*\" \"${tomcatWebApps}\\stockeasy\\\""
+                }
             }
         }
 
         stage('Deploy Backend with PM2') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    bat "pm2 stop ${PM2_APP_NAME} || exit 0"
-                    bat "pm2 start server.js --name ${PM2_APP_NAME}"
-                    bat "pm2 save"
+                dir('stockeasy-backend') {
+                    // Install PM2 globally if not already installed
+                    bat 'npm install -g pm2'
+                    
+                    // Stop existing instance if running
+                    bat 'pm2 delete stockeasy-backend || exit 0'
+                    
+                    // Start new instance
+                    bat 'pm2 start server.js --name stockeasy-backend'
                 }
             }
         }
@@ -64,12 +87,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Frontend + Backend deployed successfully!"
-            echo "Frontend: http://localhost:8080/${FRONTEND_APP}"
-            echo "Backend running via PM2 as ${PM2_APP_NAME}"
+            echo '✅ Deployment completed successfully!'
         }
         failure {
-            echo "❌ Deployment failed. Check console logs."
+            echo '❌ Deployment failed. Check console logs.'
         }
     }
 }
