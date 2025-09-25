@@ -72,14 +72,23 @@ pipeline {
         stage('Deploy Backend with PM2') {
             steps {
                 dir('stockeasy-backend') {
-                    // Install PM2 globally if not already installed
-                    bat 'npm install -g pm2'
-                    
-                    // Stop existing instance if running
-                    bat 'pm2 delete stockeasy-backend || exit 0'
-                    
-                    // Start new instance
-                    bat 'pm2 start server.js --name stockeasy-backend'
+                    script {
+                        // Install PM2 globally and capture npm prefix
+                        def npmPrefix = bat(script: 'npm config get prefix', returnStdout: true).trim()
+                        bat 'npm install -g pm2'
+                        
+                        // Use full path to PM2 executable
+                        def pm2Path = "${npmPrefix}\\pm2.cmd"
+                        
+                        // Stop existing instance if running
+                        bat "\"${pm2Path}\" delete stockeasy-backend || exit 0"
+                        
+                        // Start new instance with full path to Node
+                        bat "\"${pm2Path}\" start server.js --name stockeasy-backend"
+                        
+                        // Save PM2 process list
+                        bat "\"${pm2Path}\" save"
+                    }
                 }
             }
         }
@@ -87,10 +96,28 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment completed successfully!'
+            echo '''✅ Deployment completed successfully!
+            
+Frontend: http://localhost:8080/stockeasy
+Backend: Running on PM2 (use pm2 status to check)
+'''
         }
         failure {
-            echo '❌ Deployment failed. Check console logs.'
+            script {
+                def currentStage = currentBuild.result == "FAILURE" ? env.STAGE_NAME : "Unknown"
+                echo """❌ Deployment failed at stage: ${currentStage}
+                
+Troubleshooting steps:
+1. Check if Tomcat is running
+2. Verify PM2 installation
+3. Check file permissions
+4. Review console logs above for specific error messages
+"""
+            }
+        }
+        always {
+            // Clean workspace after build
+            cleanWs()
         }
     }
 }
