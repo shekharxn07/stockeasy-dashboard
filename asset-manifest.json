@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/stockeasy-dashboard/static/css/main.96f27f93.css",
-    "main.js": "/stockeasy-dashboard/static/js/main.3a198aaf.js",
-    "index.html": "/stockeasy-dashboard/index.html",
-    "main.96f27f93.css.map": "/stockeasy-dashboard/static/css/main.96f27f93.css.map",
-    "main.3a198aaf.js.map": "/stockeasy-dashboard/static/js/main.3a198aaf.js.map"
+    "main.css": "/shekharxn07/stockeasy-frontend.git/static/css/main.96f27f93.css",
+    "main.js": "/shekharxn07/stockeasy-frontend.git/static/js/main.3a198aaf.js",
+    "index.html": "/shekharxn07/stockeasy-frontend.git/index.html",
+    "main.96f27f93.css.map": "/shekharxn07/stockeasy-frontend.git/static/css/main.96f27f93.css.map",
+    "main.3a198aaf.js.map": "/shekharxn07/stockeasy-frontend.git/static/js/main.3a198aaf.js.map"
   },
   "entrypoints": [
     "static/css/main.96f27f93.css",
