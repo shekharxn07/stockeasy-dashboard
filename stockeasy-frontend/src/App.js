@@ -53,10 +53,13 @@ function App() {
   const handleLogin = () => setIsLoggedIn(true);
   const handleLogout = () => setIsLoggedIn(false);
 
+  // API base url: prefer env var, otherwise use relative '/api' (works with nginx proxy)
+  const API_BASE = process.env.REACT_APP_API_URL || '/api';
+
   // Data Fetching Logic
   const fetchData = async (endpoint, setter) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/${endpoint}`);
+      const response = await fetch(`${API_BASE}/${endpoint}`);
       if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
       const data = await response.json();
       setter(data);
@@ -73,14 +76,14 @@ function App() {
   }, [isLoggedIn]);
 
   // Handler Functions
-  const handleAddProduct = async (data) => { await fetch('http://localhost:8000/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('products', setProducts); };
-  const handleUpdateProduct = async (id, data) => { await fetch(`http://localhost:8000/api/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('products', setProducts); };
-  const handleDeleteProduct = async (id) => { await fetch(`http://localhost:8000/api/products/${id}`, { method: 'DELETE' }); fetchData('products', setProducts); };
-  const handleCreateSale = async (data) => { await fetch('http://localhost:8000/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('sales', setSales); fetchData('products', setProducts); };
-  const handleAddPurchase = async (data) => { await fetch('http://localhost:8000/api/purchases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('purchases', setPurchases); fetchData('products', setProducts); };
-  const handleAddSupplier = async (data) => { await fetch('http://localhost:8000/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('suppliers', setSuppliers); };
-  const handleUpdateSupplier = async (id, data) => { await fetch(`http://localhost:8000/api/suppliers/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('suppliers', setSuppliers); };
-  const handleDeleteSupplier = async (id) => { await fetch(`http://localhost:8000/api/suppliers/${id}`, { method: 'DELETE' }); fetchData('suppliers', setSuppliers); };
+  const handleAddProduct = async (data) => { await fetch(`${API_BASE}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('products', setProducts); };
+  const handleUpdateProduct = async (id, data) => { await fetch(`${API_BASE}/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('products', setProducts); };
+  const handleDeleteProduct = async (id) => { await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' }); fetchData('products', setProducts); };
+  const handleCreateSale = async (data) => { await fetch(`${API_BASE}/sales`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('sales', setSales); fetchData('products', setProducts); };
+  const handleAddPurchase = async (data) => { await fetch(`${API_BASE}/purchases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('purchases', setPurchases); fetchData('products', setProducts); };
+  const handleAddSupplier = async (data) => { await fetch(`${API_BASE}/suppliers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('suppliers', setSuppliers); };
+  const handleUpdateSupplier = async (id, data) => { await fetch(`${API_BASE}/suppliers/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchData('suppliers', setSuppliers); };
+  const handleDeleteSupplier = async (id) => { await fetch(`${API_BASE}/suppliers/${id}`, { method: 'DELETE' }); fetchData('suppliers', setSuppliers); };
 
   const appData = {
     products, sales, purchases, suppliers,
